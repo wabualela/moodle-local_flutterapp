@@ -22,6 +22,7 @@ use core_external\external_single_structure;
 use core_external\external_multiple_structure;
 use core_external\external_function_parameters;
 use context_user;
+use Exception;
 use webservice;
 use completion_info;
 use webservice_access_exception;
@@ -63,14 +64,21 @@ class get_certificate extends external_api {
         $context = context_user::instance($USER->id);
         self::validate_context($context);
 
+
+        // check if the course exist
+        if (!$course = $DB->get_record('course', [ 'id' => $params['courseid'],], '*', IGNORE_MISSING)) {
+            throw new webservice_access_exception('Course not found');
+        }
+        // check if the course have a
+        if (!$certificateid = $DB->get_field_sql("SELECT instance FROM {course_modules} WHERE course = :id AND module IN (SELECT id FROM {modules} WHERE name= 'customcert')", [ 'id' => $params['courseid'] ], IGNORE_MISSING)) {
+            throw new webservice_access_exception('you do not have a certificate in this course');
+        }
         // TODO: check if the file download is enabled
 
-        $certificateid = array_values(get_coursemodules_in_course('customcert', $params['courseid']))[0]->instance;
-        $cm            = get_coursemodule_from_instance('customcert', $certificateid, 0, false, MUST_EXIST);
-        $course        = $DB->get_record('course', [ 'id' => $params['courseid'],], '*', MUST_EXIST);
-        $certificate   = $DB->get_record('customcert', [ 'id' => $certificateid ], '*', MUST_EXIST);
-        $template      = $DB->get_record('customcert_templates', [ 'id' => $certificate->templateid ], '*', MUST_EXIST);
-        $issue         = $DB->get_record('customcert_issues', [ 'userid' => $USER->id, 'customcertid' => $certificate->id ]);
+        $cm          = get_coursemodule_from_instance('customcert', $certificateid, 0, false, MUST_EXIST);
+        $certificate = $DB->get_record('customcert', [ 'id' => $certificateid ], '*', MUST_EXIST);
+        $template    = $DB->get_record('customcert_templates', [ 'id' => $certificate->templateid ], '*', MUST_EXIST);
+        $issue       = $DB->get_record('customcert_issues', [ 'userid' => $USER->id, 'customcertid' => $certificate->id ]);
 
         // Capabilities check.
         require_capability('mod/customcert:view', context_module::instance($cm->id));
