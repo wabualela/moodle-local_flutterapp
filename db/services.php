@@ -28,18 +28,18 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
-    'local_flutterapp_get_certificate'  => [
+    'local_flutterapp_get_certificate' => [
         'classname'   => 'local_flutterapp\external\get_certificate',
         'description' => 'Get a user certificate.',
         'type'        => 'read',
         'ajax'        => true,
-        'services'    => [ MOODLE_OFFICIAL_MOBILE_SERVICE ],
+        'services'    => [ MOODLE_OFFICIAL_MOBILE_SERVICE, 'flutter_app' ],
     ],
-    'local_flutterapp_user_confirm'  => [
+    'local_flutterapp_user_confirm'    => [
         'classname'   => 'local_flutterapp\external\user_confirm',
         'description' => 'Confirm the user with username and password',
         'type'        => 'read',
         'ajax'        => true,
-        'services'    => [ MOODLE_OFFICIAL_MOBILE_SERVICE ],
+        'services'    => [ MOODLE_OFFICIAL_MOBILE_SERVICE, 'flutter_app' ],
     ],
 ];
