@@ -26,3 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Flutter Moodle Mobile App';
+// user confirm
+$string['usernameorpasssworderror']  = 'Username or password is incorrect';
+$string['erroruseralreadyconfirmed'] = 'User already confirmed';
+$string['errorconfirm']              = 'Confirmaiton error';

@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component    = 'local_flutterapp';
 $plugin->release      = '1.0';
-$plugin->version      = 2024022713;
+$plugin->version      = 2024022715;
 $plugin->requires     = 2023100900;
 $plugin->supported    = [403, 403];
 $plugin->maturity     = MATURITY_STABLE;
