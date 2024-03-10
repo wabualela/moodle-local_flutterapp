@@ -42,4 +42,11 @@ $functions = [
         'ajax'        => true,
         'services'    => [ MOODLE_OFFICIAL_MOBILE_SERVICE, 'flutter_app' ],
     ],
+    'local_flutterapp_signup_user'     => [
+        'classname'     => 'local_flutterapp\external\signup_user',
+        'description'   => 'Adds a new user (pendingto be confirmed) in the site.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'loginrequired' => false,
+    ],
 ];
