@@ -49,7 +49,6 @@ class signup_user extends external_api {
     public static function execute_parameters() {
         return new external_function_parameters(
             [
-                'username'  => new external_value(core_user::get_property_type('username'), 'Username'),
                 'firstname' => new external_value(core_user::get_property_type('firstname'), 'The first name(s) of the user'),
                 'lastname'  => new external_value(core_user::get_property_type('lastname'), 'The family name of the user'),
                 'email'     => new external_value(core_user::get_property_type('email'), 'A valid and unique email address'),
@@ -88,7 +87,6 @@ class signup_user extends external_api {
         $params = self::validate_parameters(
             self::execute_parameters(),
             array(
-                'username'  => $username,
                 'firstname' => $firstname,
                 'lastname'  => $lastname,
                 'email'     => $email,
@@ -111,7 +109,7 @@ class signup_user extends external_api {
         }
 
         $user               = new stdClass();
-        $user->username     = $params['username'];
+        $user->username     = $params['email'];
         $user->firstname    = $params['firstname'];
         $user->lastname     = $params['lastname'];
         $user->email        = $params['email'];
@@ -125,8 +123,9 @@ class signup_user extends external_api {
         $user->lastlogin    = time();
         $user->currentlogin = time();
         $user->id           = $DB->insert_record('user', $user);
-        $fullnameid         = 1;//$DB->get_field('user_info_field', 'id', [ 'name' => 'fullname' ]);
-        $ageid              = 2;//$DB->get_field('user_info_field', 'id', [ 'name' => 'age' ]);
+
+        $fullnameid = 1;//$DB->get_field('user_info_field', 'id', [ 'name' => 'fullname' ]);
+        $ageid      = 2;//$DB->get_field('user_info_field', 'id', [ 'name' => 'age' ]);
         $DB->insert_record('user_info_data', [
             'userid'  => $user->id,
             'data'    => $params['fullname'],
