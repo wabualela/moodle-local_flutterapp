@@ -25,9 +25,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'Flutter Moodle Mobile App';
+$string['pluginname'] = 'اضافة تطبيق الفلاتر';
 // user confirm
-$string['usernameorpasssworderror']         = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+$string['usernameorpasssworderror']  = 'اسم المستخدم أو كلمة المرور غير صحيحة';
 $string['erroruseralreadyconfirmed'] = 'وأكد المستخدم بالفعل';
 $string['errorconfirm']              = 'خطأ التأكيد';
+$string['notoauth2']                 = 'تم إنشاؤها مع اسم المستخدم وكلمة المرور ، يرجى المحاولة مع تسجيل الدخول.';
+$string['userexists']                = 'المستخدم موجود';
+
 
