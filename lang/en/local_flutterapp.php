@@ -31,3 +31,4 @@ $string['usernameorpasssworderror']  = 'Username or password is incorrect';
 $string['erroruseralreadyconfirmed'] = 'User already confirmed';
 $string['errorconfirm']              = 'Confirmaiton error';
 $string['notoauth2']                 = 'Count created with username and password plese try with login auth.';
+$string['userexists']                = 'user exists';

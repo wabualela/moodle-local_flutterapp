@@ -19,6 +19,7 @@ namespace local_flutterapp\external;
 use core_external\external_api;
 use core_external\external_value;
 use core_external\external_single_structure;
+use core_external\external_multiple_structure;
 use core_external\external_function_parameters;
 use core_external\external_warnings;
 use core_user;
@@ -27,6 +28,7 @@ use invalid_parameter_exception;
 use moodle_exception;
 use core_privacy;
 use moodle_url;
+use stdClass;
 
 require_once($CFG->libdir . '/authlib.php');
 require_once($CFG->dirroot . '/user/editlib.php');
@@ -46,19 +48,15 @@ class signup_user extends external_api {
      */
     public static function execute_parameters() {
         return new external_function_parameters(
-            array(
+            [
                 'username'  => new external_value(core_user::get_property_type('username'), 'Username'),
                 'firstname' => new external_value(core_user::get_property_type('firstname'), 'The first name(s) of the user'),
                 'lastname'  => new external_value(core_user::get_property_type('lastname'), 'The family name of the user'),
                 'email'     => new external_value(core_user::get_property_type('email'), 'A valid and unique email address'),
                 'phone'     => new external_value(core_user::get_property_type('phone1'), 'A valid phone number'),
-                'redirect'  => new external_value(
-                    PARAM_LOCALURL,
-                    'Redirect the user to this site url after confirmation.',
-                    VALUE_DEFAULT,
-                    '',
-                ),
-            ),
+                'age'       => new external_value(PARAM_TEXT, 'A age'),
+                'fullname'  => new external_value(PARAM_TEXT, 'A valid certificate full name'),
+            ],
         );
     }
 
@@ -82,11 +80,12 @@ class signup_user extends external_api {
         $lastname,
         $email,
         $phone,
-        $redirect = '',
+        $age,
+        $fullname,
     ) {
-        global $CFG, $PAGE;
+        global $CFG, $PAGE, $DB;
 
-        $params   = self::validate_parameters(
+        $params = self::validate_parameters(
             self::execute_parameters(),
             array(
                 'username'  => $username,
@@ -94,7 +93,8 @@ class signup_user extends external_api {
                 'lastname'  => $lastname,
                 'email'     => $email,
                 'phone'     => $phone,
-                'redirect'  => $redirect,
+                'age'       => $age,
+                'fullname'  => $fullname,
             ),
         );
 
@@ -102,32 +102,41 @@ class signup_user extends external_api {
         $context = context_system::instance();
         $PAGE->set_context($context);
 
-
-        // Validate the data sent.
-        $data           = $params;
-        $data['email2'] = $data['email'];
-        // Force policy agreed if a site policy is set. The client is responsible of implementing the interface check.
-        $manager = new core_privacy\local\sitepolicy\manager();
-        if ($manager->is_defined()) {
-            $data['policyagreed'] = 1;
+        if (!\auth_oauth2\api::is_enabled()) {
+            throw new moodle_exception('notenabled', 'auth_oauth2');
         }
-        unset($data['recaptcharesponse']);
-        unset($data['customprofilefields']);
 
-        // Save the user.
-        $user = signup_setup_new_user((object) $data);
-
-        $authplugin = get_auth_plugin('oauth2');
-
-        // Check if we should redirect the user once the user is confirmed.
-        $confirmationurl = null;
-        if (!empty($params['redirect'])) {
-            // Pass via moodle_url to fix thinks like admin links.
-            $redirect = new moodle_url($params['redirect']);
-
-            $confirmationurl = new moodle_url('/login/confirm.php', array('redirect' => $redirect->out()));
+        if ($DB->record_exists('user', [ 'username' => $params['username'] ])) {
+            throw new moodle_exception('userexists', 'local_flutterapp');
         }
-        $authplugin->user_signup_with_confirmation($user, false, $confirmationurl);
+
+        $user               = new stdClass();
+        $user->username     = $params['username'];
+        $user->firstname    = $params['firstname'];
+        $user->lastname     = $params['lastname'];
+        $user->email        = $params['email'];
+        $user->phone1       = $params['phone'];
+        $user->password     = hash('sha256', $params['phone']);
+        $user->auth         = 'oauth2';
+        $user->confirmed    = 1;
+        $user->mnethostid   = 1;
+        $user->firstaccess  = time();
+        $user->lastaccess   = time();
+        $user->lastlogin    = time();
+        $user->currentlogin = time();
+        $user->id           = $DB->insert_record('user', $user);
+        $fullnameid         = 1;//$DB->get_field('user_info_field', 'id', [ 'name' => 'fullname' ]);
+        $ageid              = 2;//$DB->get_field('user_info_field', 'id', [ 'name' => 'age' ]);
+        $DB->insert_record('user_info_data', [
+            'userid'  => $user->id,
+            'data'    => $params['fullname'],
+            'fieldid' => $fullnameid,
+        ]);
+        $DB->insert_record('user_info_data', [
+            'userid'  => $user->id,
+            'data'    => $params['age'],
+            'fieldid' => $ageid,
+        ]);
 
         $result = [
             'success'  => true,

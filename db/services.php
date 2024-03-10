@@ -48,5 +48,6 @@ $functions = [
         'type'          => 'write',
         'ajax'          => true,
         'loginrequired' => false,
+        'services'      => [ MOODLE_OFFICIAL_MOBILE_SERVICE, 'flutter_app' ],
     ],
 ];
