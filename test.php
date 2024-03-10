@@ -33,53 +33,10 @@ $PAGE->set_context(context_system::instance());
 $PAGE->set_heading($SITE->fullname);
 echo $OUTPUT->header();
 
-$userid   = 2;
-$courseid = 2;
 
-
-$certificates = $DB->get_records('customcert', [ 'course' => $courseid ]);
-
-$certificates_data = [];
-
-foreach ($certificates as $certificate) {
-    echo '';
-
-    $cm = get_coursemodule_from_instance('customcert', $certificate->id, 0, false, MUST_EXIST);
-
-    // Capabilities check.
-    if (!has_capability('mod/customcert:view', \context_module::instance($cm->id), null, true)) {
-        continue;
-    }
-
-    if ($userid != $USER->id) {
-        if (!has_capability('mod/customcert:viewreport', \context_module::instance($cm->id), null, true)) {
-            continue;
-        }
-    } else {
-        // Make sure the user has met the required time.
-        if ($certificate->requiredtime) {
-            if (\mod_customcert\certificate::get_course_time($certificate->course) < ($certificate->requiredtime * 60)) {
-                continue;
-            }
-        }
-    }
-
-    $issue = $DB->get_record('customcert_issues', [ 'customcertid' => $certificate->id, 'userid' => $userid ]);
-
-    // If the user doesn't have an issue, then there is nothing to do.
-    if (!$issue) {
-        continue;
-    }
-
-    $certificate_element = array(
-        'id'     => $certificate->id,
-        'course' => $certificate->course,
-        'name'   => $certificate->name,
-    );
-
-    array_push($certificates_data, $certificate_element);
-}
-
-var_dump($certificates_data);
-
+die(
+    var_export(
+        $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('fullname') ]),
+    )
+);
 echo $OUTPUT->footer();

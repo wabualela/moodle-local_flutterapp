@@ -74,7 +74,6 @@ class signup_user extends external_api {
      * @throws invalid_parameter_exception
      */
     public static function execute(
-        $username,
         $firstname,
         $lastname,
         $email,
@@ -100,11 +99,11 @@ class signup_user extends external_api {
         $context = context_system::instance();
         $PAGE->set_context($context);
 
-        if (!\auth_oauth2\api::is_enabled()) {
-            throw new moodle_exception('notenabled', 'auth_oauth2');
-        }
+         if (!\auth_oauth2\api::is_enabled()) {
+             throw new moodle_exception('notenabled', 'auth_oauth2');
+         }
 
-        if ($DB->record_exists('user', [ 'username' => $params['username'] ])) {
+        if ($DB->record_exists('user', [ 'username' => $params['email'] ])) {
             throw new moodle_exception('userexists', 'local_flutterapp');
         }
 
@@ -122,19 +121,20 @@ class signup_user extends external_api {
         $user->lastaccess   = time();
         $user->lastlogin    = time();
         $user->currentlogin = time();
-        $user->id           = $DB->insert_record('user', $user);
 
-        $fullnameid = 1;//$DB->get_field('user_info_field', 'id', [ 'name' => 'fullname' ]);
-        $ageid      = 2;//$DB->get_field('user_info_field', 'id', [ 'name' => 'age' ]);
+        $user->id      = $DB->insert_record('user', $user);
+        $fullnamefield = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('fullname') ]);
+        $agefield      = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('age') ]);
+
         $DB->insert_record('user_info_data', [
             'userid'  => $user->id,
             'data'    => $params['fullname'],
-            'fieldid' => $fullnameid,
+            'fieldid' => $fullnamefield->id,
         ]);
         $DB->insert_record('user_info_data', [
             'userid'  => $user->id,
             'data'    => $params['age'],
-            'fieldid' => $ageid,
+            'fieldid' => $agefield->id,
         ]);
 
         $result = [
