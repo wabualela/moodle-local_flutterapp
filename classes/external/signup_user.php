@@ -49,12 +49,11 @@ class signup_user extends external_api {
     public static function execute_parameters() {
         return new external_function_parameters(
             [
-                'firstname' => new external_value(core_user::get_property_type('firstname'), 'The first name(s) of the user'),
-                'lastname'  => new external_value(core_user::get_property_type('lastname'), 'The family name of the user'),
-                'email'     => new external_value(core_user::get_property_type('email'), 'A valid and unique email address'),
-                'phone'     => new external_value(core_user::get_property_type('phone1'), 'A valid phone number'),
-                'age'       => new external_value(PARAM_TEXT, 'A age'),
-                'fullname'  => new external_value(PARAM_TEXT, 'A valid certificate full name'),
+                'firstname' => new external_value(core_user::get_property_type('firstname'), 'The first name(s) of the user', VALUE_REQUIRED),
+                'lastname'  => new external_value(core_user::get_property_type('lastname'), 'The family name of the user', VALUE_REQUIRED),
+                'email'     => new external_value(core_user::get_property_type('email'), 'A valid and unique email address', VALUE_REQUIRED),
+                'phone'     => new external_value(core_user::get_property_type('phone1'), 'A valid phone number', VALUE_REQUIRED),
+                'auth'      => new external_value(PARAM_TEXT, 'The auth type Whatsapp or Google', VALUE_REQUIRED),
             ],
         );
     }
@@ -78,8 +77,7 @@ class signup_user extends external_api {
         $lastname,
         $email,
         $phone,
-        $age,
-        $fullname,
+        $auth,
     ) {
         global $CFG, $PAGE, $DB;
 
@@ -90,8 +88,7 @@ class signup_user extends external_api {
                 'lastname'  => $lastname,
                 'email'     => $email,
                 'phone'     => $phone,
-                'age'       => $age,
-                'fullname'  => $fullname,
+                'auth'      => $auth,
             ),
         );
 
@@ -99,43 +96,42 @@ class signup_user extends external_api {
         $context = context_system::instance();
         $PAGE->set_context($context);
 
-         if (!\auth_oauth2\api::is_enabled()) {
-             throw new moodle_exception('notenabled', 'auth_oauth2');
-         }
+        $userinfo['email']     = $params['email'];
+        $userinfo['firstname'] = $params['firstname'];
+        $userinfo['lastname']  = $params['lastname'];
+        $userinfo['phone1']    = $params['phone'];
 
-        if ($DB->record_exists('user', [ 'username' => $params['email'] ])) {
-            throw new moodle_exception('userexists', 'local_flutterapp');
+        if ($params['auth'] == 'whatsapp') {
+             if (!\auth_twilio\api::is_enabled()) {
+                 throw new moodle_exception('notenabled', 'auth_twilio');
+             }
+            $userinfo['username'] = $params['phone'];
+
+            if ($DB->record_exists('user', [ 'username' => $userinfo['username'] ])) {
+                throw new moodle_exception('userexists', 'local_flutterapp');
+            }
+
+            $newuser  = \auth_twilio\api::create_new_confirmed_account($userinfo);
+            $userinfo = get_complete_user_data('id', $newuser->id);
+        } else {
+             if (!\auth_oauth2\api::is_enabled()) {
+                 throw new moodle_exception('notenabled', 'auth_oauth2');
+             }
+            $issuer = \core\oauth2\api::get_issuer(1);
+
+            if (!$issuer->is_available_for_login()) {
+                throw new moodle_exception('issuernologin', 'auth_oauth2');
+            }
+
+            $userinfo['username'] = $params['email'];
+
+            if ($DB->record_exists('user', [ 'username' => $userinfo['username'] ])) {
+                throw new moodle_exception('userexists', 'local_flutterapp');
+            }
+
+            $newuser  = \auth_oauth2\api::create_new_confirmed_account($userinfo, $issuer);
+            $userinfo = get_complete_user_data('id', $newuser->id);
         }
-
-        $user               = new stdClass();
-        $user->username     = $params['email'];
-        $user->firstname    = $params['firstname'];
-        $user->lastname     = $params['lastname'];
-        $user->email        = $params['email'];
-        $user->phone1       = $params['phone'];
-        $user->password     = hash('sha256', $params['phone']);
-        $user->auth         = 'oauth2';
-        $user->confirmed    = 1;
-        $user->mnethostid   = 1;
-        $user->firstaccess  = time();
-        $user->lastaccess   = time();
-        $user->lastlogin    = time();
-        $user->currentlogin = time();
-
-        $user->id      = $DB->insert_record('user', $user);
-        $fullnamefield = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('fullname') ]);
-        $agefield      = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('age') ]);
-
-        $DB->insert_record('user_info_data', [
-            'userid'  => $user->id,
-            'data'    => $params['fullname'],
-            'fieldid' => $fullnamefield->id,
-        ]);
-        $DB->insert_record('user_info_data', [
-            'userid'  => $user->id,
-            'data'    => $params['age'],
-            'fieldid' => $agefield->id,
-        ]);
 
         $result = [
             'success'  => true,
