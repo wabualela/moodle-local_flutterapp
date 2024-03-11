@@ -41,12 +41,14 @@ require_once($CFG->dirroot . '/user/profile/lib.php');
  * @copyright  2024 Wail Abualela <wailabualela@email.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class signup_user extends external_api {
+class signup_user extends external_api
+{
     /**
      * Returns description of method parameters
      * @return external_function_parameters
      */
-    public static function execute_parameters() {
+    public static function execute_parameters()
+    {
         return new external_function_parameters(
             [
                 'firstname' => new external_value(core_user::get_property_type('firstname'), 'The first name(s) of the user', VALUE_REQUIRED),
@@ -101,36 +103,36 @@ class signup_user extends external_api {
         $userinfo['lastname']  = $params['lastname'];
         $userinfo['phone1']    = $params['phone'];
 
-        if ($params['auth'] == 'whatsapp') {
-             if (!\auth_twilio\api::is_enabled()) {
-                 throw new moodle_exception('notenabled', 'auth_twilio');
-             }
-            $userinfo['username'] = $params['phone'];
+        if (empty($params['auth'])) {
+            throw new moodle_exception('authempty', 'local_flutterapp');
+        }
 
-            if ($DB->record_exists('user', [ 'username' => $userinfo['username'] ])) {
-                throw new moodle_exception('userexists', 'local_flutterapp');
+        if ($params['auth'] === \local_flutterapp\api::AUTH_WHATSAPP) {
+
+            if (!\auth_twilio\api::is_enabled()) {
+                throw new moodle_exception('notenabled', 'auth_twilio');
             }
 
-            $newuser  = \auth_twilio\api::create_new_confirmed_account($userinfo);
-            $userinfo = get_complete_user_data('id', $newuser->id);
-        } else {
-             if (!\auth_oauth2\api::is_enabled()) {
-                 throw new moodle_exception('notenabled', 'auth_oauth2');
-             }
-            $issuer = \core\oauth2\api::get_issuer(1);
+            $userinfo['username'] = $params['phone'];
+            \local_flutterapp\api::user_exists_phone($userinfo['username']);
+            \auth_twilio\api::create_new_confirmed_account($userinfo);
 
+        } else if ($params['auth'] === \local_flutterapp\api::AUTH_OAUTH) {
+
+            if (!\auth_oauth2\api::is_enabled()) {
+                throw new moodle_exception('notenabled', 'auth_oauth2');
+            }
+
+            $issuer = \core\oauth2\api::get_issuer(1);
             if (!$issuer->is_available_for_login()) {
                 throw new moodle_exception('issuernologin', 'auth_oauth2');
             }
 
             $userinfo['username'] = $params['email'];
-
-            if ($DB->record_exists('user', [ 'username' => $userinfo['username'] ])) {
-                throw new moodle_exception('userexists', 'local_flutterapp');
-            }
-
-            $newuser  = \auth_oauth2\api::create_new_confirmed_account($userinfo, $issuer);
-            $userinfo = get_complete_user_data('id', $newuser->id);
+            \local_flutterapp\api::user_exists_email($userinfo['username']);
+            \local_flutterapp\api::create_new_confirmed_account($userinfo, $issuer);
+        } else {
+            throw new moodle_exception('authnotfound', 'local_flutterapp');
         }
 
         $result = [
@@ -147,7 +149,8 @@ class signup_user extends external_api {
      * @return external_single_structure
      * @since Moodle 3.2
      */
-    public static function execute_returns() {
+    public static function execute_returns()
+    {
 
         return new external_single_structure(
             array(

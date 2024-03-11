@@ -32,5 +32,7 @@ $string['erroruseralreadyconfirmed'] = 'وأكد المستخدم بالفعل';
 $string['errorconfirm']              = 'خطأ التأكيد';
 $string['notoauth2']                 = 'تم إنشاؤها مع اسم المستخدم وكلمة المرور ، يرجى المحاولة مع تسجيل الدخول.';
 $string['userexists']                = 'المستخدم موجود';
+$string['authnotfound']              = 'لم يتم العثور على المصادقة';
+$string['authempty']                 = 'المصادقة فارغة';
 
 
