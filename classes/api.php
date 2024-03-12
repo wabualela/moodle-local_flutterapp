@@ -98,7 +98,7 @@ class api
             throw new \moodle_exception('userexists', 'local_flutterapp');
         }
 
-        if ($DB->record_exists('user', [ 'phone' => $phone ])) {
+        if ($DB->record_exists('user', [ 'phone1' => $phone ])) {
             throw new \moodle_exception('userexists', 'local_flutterapp');
         }
     }
