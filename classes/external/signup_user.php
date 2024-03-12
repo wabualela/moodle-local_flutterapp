@@ -120,7 +120,7 @@ class signup_user extends external_api {
             }
 
             $userinfo['username'] = $params['phone'];
-            \local_flutterapp\api::user_exists_phone($userinfo['username']);
+            $DB->record_exists('user', [ 'username' => $userinfo['username'], 'deleted' => 0 ]);
             if ($user = \auth_twilio\api::create_new_confirmed_account($userinfo)) {
                 $certificatname = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('certificatename') ]);
                 $age            = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('age') ]);
@@ -148,8 +148,8 @@ class signup_user extends external_api {
             }
 
             $userinfo['username'] = $params['email'];
-            \local_flutterapp\api::user_exists_email($userinfo['username']);
-            if($user = \local_flutterapp\api::create_new_confirmed_account($userinfo, $issuer)){
+            $DB->record_exists('user', [ 'username' => $userinfo['username'], 'deleted' => 0 ]);
+            if ($user = \local_flutterapp\api::create_new_confirmed_account($userinfo, $issuer)) {
                 $certificatname = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('certificatename') ]);
                 $age            = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('age') ]);
                 $DB->insert_record('user_info_data', [

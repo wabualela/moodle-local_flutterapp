@@ -23,8 +23,7 @@ namespace local_flutterapp;
  * @copyright  2024 Wail Abualela <wailabualela@email.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class api
-{
+class api {
     const AUTH_WHATSAPP = 'whatsapp';
     const AUTH_OAUTH    = 'oauth2';
     /**
@@ -34,8 +33,7 @@ class api
      * @param \core\oauth2\issuer $issuer
      * @return bool
      */
-    public static function create_new_confirmed_account($userinfo, $issuer)
-    {
+    public static function create_new_confirmed_account($userinfo, $issuer) {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/user/profile/lib.php');
         require_once($CFG->dirroot . '/user/lib.php');
@@ -59,8 +57,7 @@ class api
      * @param object $user
      * @return object
      */
-    private static function save_user(array $userinfo, object $user): object
-    {
+    private static function save_user(array $userinfo, object $user): object {
         // Map supplied issuer user info to Moodle user fields.
         $userfieldmapping = new \core\oauth2\user_field_mapping();
         $userfieldlist    = $userfieldmapping->get_internalfields();
@@ -83,41 +80,5 @@ class api
         }
 
         return $user;
-    }
-
-    /**
-     * check is user exist by phone
-     * @param string $phone
-     * @throws \moodle_exception
-     * @return void
-     */
-    public static function user_exists_phone($phone)
-    {
-        global $DB;
-        if ($DB->record_exists('user', [ 'username' => $phone ])) {
-            throw new \moodle_exception('userexists', 'local_flutterapp');
-        }
-
-        if ($DB->record_exists('user', [ 'phone1' => $phone ])) {
-            throw new \moodle_exception('userexists', 'local_flutterapp');
-        }
-    }
-
-    /**
-     * check is user exist by email
-     * @param string $email
-     * @throws \moodle_exception
-     * @return void
-     */
-    public static function user_exists_email($email)
-    {
-        global $DB;
-        if ($DB->record_exists('user', [ 'username' => $email ])) {
-            throw new \moodle_exception('userexists', 'local_flutterapp');
-        }
-
-        if ($DB->record_exists('user', [ 'email' => $email ])) {
-            throw new \moodle_exception('userexists', 'local_flutterapp');
-        }
     }
 }
