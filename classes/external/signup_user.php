@@ -149,7 +149,20 @@ class signup_user extends external_api {
 
             $userinfo['username'] = $params['email'];
             \local_flutterapp\api::user_exists_email($userinfo['username']);
-            \local_flutterapp\api::create_new_confirmed_account($userinfo, $issuer);
+            if($user = \local_flutterapp\api::create_new_confirmed_account($userinfo, $issuer)){
+                $certificatname = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('certificatename') ]);
+                $age            = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('age') ]);
+                $DB->insert_record('user_info_data', [
+                    'userid'  => $user->id,
+                    'data'    => $params['certificatename'],
+                    'fieldid' => $certificatname->id,
+                ]);
+                $DB->insert_record('user_info_data', [
+                    'userid'  => $user->id,
+                    'data'    => $params['age'],
+                    'fieldid' => $age->id,
+                ]);
+            }
         } else {
             throw new moodle_exception('authnotfound', 'local_flutterapp');
         }
