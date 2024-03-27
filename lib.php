@@ -15,24 +15,16 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * English language pack for Flutter Moodle Mobile App
+ * Callback implementations for Flutter Moodle Mobile App
  *
  * @package    local_flutterapp
- * @category   string
  * @copyright  2024 Wail Abualela <wailabualela@email.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'اضافة تطبيق الفلاتر';
-// user confirm
-$string['usernameorpasssworderror']  = 'اسم المستخدم أو كلمة المرور غير صحيحة';
-$string['erroruseralreadyconfirmed'] = 'وأكد المستخدم بالفعل';
-$string['errorconfirm']              = 'خطأ التأكيد';
-$string['notoauth2']                 = 'تم إنشاؤها مع اسم المستخدم وكلمة المرور ، يرجى المحاولة مع تسجيل الدخول.';
-$string['userexists']                = 'المستخدم موجود';
-$string['authnotfound']              = 'لم يتم العثور على المصادقة';
-$string['authempty']                 = 'المصادقة فارغة';
-
+define('AUTH_WHATSAPP', 'whatsapp');
+define('AUTH_OAUTH2', 'oauth2');
+define('AUTH_TELEGRAM', 'telegram');
 

@@ -24,8 +24,6 @@ namespace local_flutterapp;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class api {
-    const AUTH_WHATSAPP = 'whatsapp';
-    const AUTH_OAUTH    = 'oauth2';
     /**
      * Create an account with a linked login that is already confirmed.
      *

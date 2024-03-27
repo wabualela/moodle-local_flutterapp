@@ -26,13 +26,11 @@ use core_user;
 use context_system;
 use invalid_parameter_exception;
 use moodle_exception;
-use core_privacy;
-use moodle_url;
-use stdClass;
 
-require_once($CFG->libdir . '/authlib.php');
-require_once($CFG->dirroot . '/user/editlib.php');
-require_once($CFG->dirroot . '/user/profile/lib.php');
+require_once ("$CFG->libdir/authlib.php");
+require_once ("$CFG->dirroot/user/editlib.php");
+require_once ("$CFG->dirroot/user/profile/lib.php");
+require_once ("$CFG->dirroot/local/flutterapp/lib.php");
 
 /**
  * Class singup_user
@@ -48,11 +46,12 @@ class signup_user extends external_api {
      */
     public static function execute_parameters() {
         return new external_function_parameters(
-            [
+            [ 
                 'firstname'       => new external_value(core_user::get_property_type('firstname'), 'The first name(s) of the user', VALUE_REQUIRED),
                 'lastname'        => new external_value(core_user::get_property_type('lastname'), 'The family name of the user', VALUE_REQUIRED),
                 'email'           => new external_value(core_user::get_property_type('email'), 'A valid and unique email address', VALUE_REQUIRED),
                 'phone'           => new external_value(core_user::get_property_type('phone1'), 'A valid phone number', VALUE_REQUIRED),
+                'telegramid'      => new external_value(PARAM_TEXT, 'Telegram ID', VALUE_DEFAULT, ' '),
                 'auth'            => new external_value(PARAM_TEXT, 'The auth type Whatsapp or Google', VALUE_REQUIRED),
                 'certificatename' => new external_value(PARAM_TEXT, 'Full name for certificate', VALUE_REQUIRED),
                 'age'             => new external_value(PARAM_TEXT, 'Your age', VALUE_REQUIRED),
@@ -79,6 +78,7 @@ class signup_user extends external_api {
         $lastname,
         $email,
         $phone,
+        $telegramid = "",
         $auth,
         $certificatename,
         $age,
@@ -91,6 +91,7 @@ class signup_user extends external_api {
                 'firstname'       => $firstname,
                 'lastname'        => $lastname,
                 'email'           => $email,
+                'telegramid'      => $telegramid,
                 'phone'           => $phone,
                 'auth'            => $auth,
                 'certificatename' => $certificatename,
@@ -109,12 +110,12 @@ class signup_user extends external_api {
         $userinfo['certificatename'] = $params['certificatename'];
         $userinfo['age']             = $params['age'];
 
-        if (empty($params['auth'])) {
+        if (empty ($params['auth'])) {
             throw new moodle_exception('authempty', 'local_flutterapp');
         }
 
-        if ($params['auth'] === \local_flutterapp\api::AUTH_WHATSAPP) {
-
+        if ($params['auth'] === AUTH_WHATSAPP) {
+            die (var_export($telegramid));
             if (!\auth_twilio\api::is_enabled()) {
                 throw new moodle_exception('notenabled', 'auth_twilio');
             }
@@ -124,20 +125,19 @@ class signup_user extends external_api {
             if ($user = \auth_twilio\api::create_new_confirmed_account($userinfo)) {
                 $certificatname = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('certificatename') ]);
                 $age            = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('age') ]);
-                $DB->insert_record('user_info_data', [
+                $DB->insert_record('user_info_data', [ 
                     'userid'  => $user->id,
                     'data'    => $params['certificatename'],
                     'fieldid' => $certificatname->id,
                 ]);
-                $DB->insert_record('user_info_data', [
+                $DB->insert_record('user_info_data', [ 
                     'userid'  => $user->id,
                     'data'    => $params['age'],
                     'fieldid' => $age->id,
                 ]);
             }
 
-        } else if ($params['auth'] === \local_flutterapp\api::AUTH_OAUTH) {
-
+        } else if ($params['auth'] === AUTH_OAUTH2) {
             if (!\auth_oauth2\api::is_enabled()) {
                 throw new moodle_exception('notenabled', 'auth_oauth2');
             }
@@ -152,22 +152,36 @@ class signup_user extends external_api {
             if ($user = \local_flutterapp\api::create_new_confirmed_account($userinfo, $issuer)) {
                 $certificatname = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('certificatename') ]);
                 $age            = $DB->get_record_select('user_info_field', 'shortname = :name', [ 'name' => $DB->sql_compare_text('age') ]);
-                $DB->insert_record('user_info_data', [
+                $DB->insert_record('user_info_data', [ 
                     'userid'  => $user->id,
                     'data'    => $params['certificatename'],
                     'fieldid' => $certificatname->id,
                 ]);
-                $DB->insert_record('user_info_data', [
+                $DB->insert_record('user_info_data', [ 
                     'userid'  => $user->id,
                     'data'    => $params['age'],
                     'fieldid' => $age->id,
                 ]);
             }
+        } else if ($params['auth'] === AUTH_TELEGRAM) {
+            if (!\auth_telegram\auth::is_enabled()) {
+                throw new moodle_exception('notenabled', 'auth_telegram');
+            }
+
+            if (empty ($params['telegramid'])) {
+                throw new moodle_exception('missingtelegramid', 'auth_telegram');
+            }
+
+            if (\auth_telegram\telegram::user_exists($params['telegramid'])) {
+                throw new moodle_exception('userexists', 'local_flutterapp');
+            }
+
+            \auth_telegram\telegram::create_user($params);
         } else {
             throw new moodle_exception('authnotfound', 'local_flutterapp');
         }
 
-        $result = [
+        $result = [ 
             'success'  => true,
             'warnings' => array(),
         ];
